@@ -14,7 +14,7 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
-import { MessageCircleQuestionIcon as QuestionMarkCircle } from "lucide-react";
+import { HelpCircle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { FormulaLegend } from "./formula-legend";
 
@@ -208,8 +208,8 @@ export default function Spreadsheet() {
           onClick={() => handleCellClick(cellRef)}
           style={{
             position: "absolute",
-            left: `${(j - visibleCols.start) * 100}px`,
-            top: `${(i - visibleRows.start) * 30 + 30}px`,
+            left: `${j * 100}px`,
+            top: `${i * 30}px`,
           }}
         >
           {data[cellRef]?.value || ""}
@@ -226,13 +226,23 @@ export default function Spreadsheet() {
       <div
         key={`header-${j}`}
         className="border border-gray-300 bg-gray-100 w-24 h-8 flex items-center justify-center font-semibold"
-        style={{
-          position: "absolute",
-          left: `${(j - visibleCols.start) * 100}px`,
-          top: "0",
-        }}
+        style={{ position: "absolute", left: `${j * 100}px`, top: "0" }}
       >
         {getColumnLabel(j)}
+      </div>
+    );
+  }
+
+  // Generate row headers
+  const rowHeaders = [];
+  for (let i = visibleRows.start; i <= visibleRows.end; i++) {
+    rowHeaders.push(
+      <div
+        key={`header-${i}`}
+        className="border border-gray-300 bg-gray-100 w-12 h-8 flex items-center justify-center font-semibold"
+        style={{ position: "absolute", left: "0", top: `${i * 30 + 30}px` }}
+      >
+        {i + 1}
       </div>
     );
   }
@@ -252,29 +262,6 @@ export default function Spreadsheet() {
         <div className="text-sm text-gray-500">
           {activeCell ? `Active: ${activeCell}` : "No cell selected"}
         </div>
-
-        <Drawer open={isLegendOpen} onOpenChange={setIsLegendOpen}>
-          <DrawerTrigger asChild>
-            <Button variant="outline" size="icon" className="ml-auto">
-              <QuestionMarkCircle className="h-4 w-4" />
-              <span className="sr-only">Formula Help</span>
-            </Button>
-          </DrawerTrigger>
-          <DrawerContent>
-            <DrawerHeader>
-              <DrawerTitle>Formula Reference</DrawerTitle>
-              <DrawerDescription>
-                Supported operations and examples for spreadsheet formulas
-              </DrawerDescription>
-            </DrawerHeader>
-            <FormulaLegend />
-            <DrawerFooter>
-              <DrawerClose asChild>
-                <Button variant="outline">Close</Button>
-              </DrawerClose>
-            </DrawerFooter>
-          </DrawerContent>
-        </Drawer>
       </div>
 
       <div
@@ -288,8 +275,33 @@ export default function Spreadsheet() {
         </div>
 
         {/* Cells */}
-        <div style={{ marginTop: "30px" }}>{rows.flat()}</div>
+        <div style={{ marginLeft: "48px", marginTop: "30px" }}>
+          {rows.flat()}
+        </div>
       </div>
+
+      <Drawer open={isLegendOpen} onOpenChange={setIsLegendOpen}>
+        <DrawerTrigger asChild>
+          <Button variant="outline" size="icon" className="ml-auto">
+            <HelpCircle className="h-4 w-4" />
+            <span className="sr-only">Formula Help</span>
+          </Button>
+        </DrawerTrigger>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Formula Reference</DrawerTitle>
+            <DrawerDescription>
+              Supported operations and examples for spreadsheet formulas
+            </DrawerDescription>
+          </DrawerHeader>
+          <FormulaLegend />
+          <DrawerFooter>
+            <DrawerClose asChild>
+              <Button variant="outline">Close</Button>
+            </DrawerClose>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 }
