@@ -212,7 +212,9 @@ export default function Spreadsheet() {
             top: `${i * 30}px`,
           }}
         >
-          {data[cellRef]?.value || ""}
+          {data[cellRef]?.value || (
+            <span className="text-gray-300">{cellRef}</span>
+          )}
         </div>
       );
     }
@@ -233,75 +235,66 @@ export default function Spreadsheet() {
     );
   }
 
-  // Generate row headers
-  const rowHeaders = [];
-  for (let i = visibleRows.start; i <= visibleRows.end; i++) {
-    rowHeaders.push(
-      <div
-        key={`header-${i}`}
-        className="border border-gray-300 bg-gray-100 w-12 h-8 flex items-center justify-center font-semibold"
-        style={{ position: "absolute", left: "0", top: `${i * 30 + 30}px` }}
-      >
-        {i + 1}
-      </div>
-    );
-  }
-
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center gap-2">
-        <Input
-          ref={inputRef}
-          value={editValue}
-          onChange={handleInputChange}
-          onBlur={handleInputBlur}
-          onKeyDown={handleKeyPress}
-          className="w-64"
-          placeholder="Enter value or formula (e.g., =A1+B1)"
-        />
-        <div className="text-sm text-gray-500">
-          {activeCell ? `Active: ${activeCell}` : "No cell selected"}
+    <div>
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-2">
+          <Input
+            ref={inputRef}
+            value={editValue}
+            onChange={handleInputChange}
+            onBlur={handleInputBlur}
+            onKeyDown={handleKeyPress}
+            className="w-64"
+            placeholder="Enter value or formula (e.g., =A1+B1)"
+          />
+          <div className="text-sm text-gray-500">
+            {activeCell ? `Active: ${activeCell}` : "No cell selected"}
+          </div>
         </div>
+
+        <div
+          ref={containerRef}
+          className="border border-gray-300 relative overflow-auto"
+          style={{ width: "100%", height: "600px" }}
+        >
+          {/* Column headers */}
+          <div
+            style={{ position: "sticky", top: 0, height: "30px", zIndex: 5 }}
+          >
+            <div style={{ marginLeft: "48px" }}>{columnHeaders}</div>
+          </div>
+
+          {/* Row headers and Cells container */}
+          <div className="flex">
+            {/* Cells */}
+            <div>{rows.flat()}</div>
+          </div>
+        </div>
+
+        <Drawer open={isLegendOpen} onOpenChange={setIsLegendOpen}>
+          <DrawerTrigger asChild>
+            <Button variant="outline" size="icon" className="ml-auto">
+              <HelpCircle className="h-4 w-4" />
+              <span className="sr-only">Formula Help</span>
+            </Button>
+          </DrawerTrigger>
+          <DrawerContent>
+            <DrawerHeader>
+              <DrawerTitle>Formula Reference</DrawerTitle>
+              <DrawerDescription>
+                Supported operations and examples for spreadsheet formulas
+              </DrawerDescription>
+            </DrawerHeader>
+            <FormulaLegend />
+            <DrawerFooter>
+              <DrawerClose asChild>
+                <Button variant="outline">Close</Button>
+              </DrawerClose>
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>
       </div>
-
-      <div
-        ref={containerRef}
-        className="border border-gray-300 relative overflow-auto"
-        style={{ width: "100%", height: "600px" }}
-      >
-        {/* Column headers */}
-        <div style={{ position: "sticky", top: 0, height: "30px", zIndex: 5 }}>
-          {columnHeaders}
-        </div>
-
-        {/* Cells */}
-        <div style={{ marginLeft: "48px", marginTop: "30px" }}>
-          {rows.flat()}
-        </div>
-      </div>
-
-      <Drawer open={isLegendOpen} onOpenChange={setIsLegendOpen}>
-        <DrawerTrigger asChild>
-          <Button variant="outline" size="icon" className="ml-auto">
-            <HelpCircle className="h-4 w-4" />
-            <span className="sr-only">Formula Help</span>
-          </Button>
-        </DrawerTrigger>
-        <DrawerContent>
-          <DrawerHeader>
-            <DrawerTitle>Formula Reference</DrawerTitle>
-            <DrawerDescription>
-              Supported operations and examples for spreadsheet formulas
-            </DrawerDescription>
-          </DrawerHeader>
-          <FormulaLegend />
-          <DrawerFooter>
-            <DrawerClose asChild>
-              <Button variant="outline">Close</Button>
-            </DrawerClose>
-          </DrawerFooter>
-        </DrawerContent>
-      </Drawer>
     </div>
   );
 }
