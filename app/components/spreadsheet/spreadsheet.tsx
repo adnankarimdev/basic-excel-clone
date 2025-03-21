@@ -2,6 +2,13 @@
 
 import type React from "react";
 
+import {
+  CELL_DIMENSIONS,
+  evaluateFormula,
+  getCellRef,
+  getColumnLabel,
+} from "@/app/helpers/spreadsheet-helpers";
+import { SpreadsheetData } from "@/app/types/spreadsheet-types";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -18,17 +25,6 @@ import { HelpCircle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { FormulaLegend } from "./formula-legend";
 
-// Define cell data structure
-type CellData = {
-  value: string;
-  formula?: string;
-};
-
-// Define spreadsheet data structure
-type SpreadsheetData = {
-  [key: string]: CellData;
-};
-
 export default function Spreadsheet() {
   // State for spreadsheet data
   const [data, setData] = useState<SpreadsheetData>({});
@@ -41,69 +37,23 @@ export default function Spreadsheet() {
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Calculate column letter from index
-  const getColumnLabel = (index: number): string => {
-    let label = "";
-    while (index >= 0) {
-      label = String.fromCharCode(65 + (index % 26)) + label;
-      index = Math.floor(index / 26) - 1;
-    }
-    return label;
-  };
-
-  // Get cell reference (e.g., "A1")
-  const getCellRef = (row: number, col: number): string => {
-    return `${getColumnLabel(col)}${row + 1}`;
-  };
-
-  // Parse and evaluate formula
-  const evaluateFormula = (formula: string): string => {
-    if (!formula.startsWith("=")) return formula;
-
-    try {
-      // Remove the equals sign
-      const expression = formula.substring(1);
-
-      // Replace cell references with their values
-      const replacedExpression = expression.replace(
-        /[A-Z]+[0-9]+/g,
-        (cellRef) => {
-          const cellValue = data[cellRef]?.value || "0";
-          // Check if the value is numeric
-          return isNaN(Number(cellValue)) ? `"${cellValue}"` : cellValue;
-        }
-      );
-
-      // Evaluate the expression
-      // eslint-disable-next-line no-eval
-      const result = eval(replacedExpression);
-      return result.toString();
-    } catch (error) {
-      return "#ERROR";
-    }
-  };
-
-  // Handle cell value change
+  // Update handleCellChange to use the helper
   const handleCellChange = (cellRef: string, value: string) => {
     const newData = { ...data };
 
-    // Check if it's a formula
     if (value.startsWith("=")) {
       newData[cellRef] = {
         formula: value,
-        value: evaluateFormula(value),
+        value: evaluateFormula(value, data),
       };
 
-      // Re-evaluate all formulas that might depend on this cell
       Object.keys(newData).forEach((ref) => {
         if (newData[ref].formula && newData[ref].formula.includes(cellRef)) {
-          newData[ref].value = evaluateFormula(newData[ref].formula);
+          newData[ref].value = evaluateFormula(newData[ref].formula, newData);
         }
       });
     } else {
-      newData[cellRef] = {
-        value,
-      };
+      newData[cellRef] = { value };
     }
 
     setData(newData);
@@ -151,29 +101,24 @@ export default function Spreadsheet() {
     }
   };
 
-  // Handle scroll to update visible cells
+  // Update handleScroll to use constants
   const handleScroll = () => {
     if (!containerRef.current) return;
 
-    const scrollTop = containerRef.current.scrollTop;
-    const scrollLeft = containerRef.current.scrollLeft;
-
-    const rowHeight = 30; // Height of each row in pixels
-    const colWidth = 100; // Width of each column in pixels
+    const { scrollTop, scrollLeft, clientHeight, clientWidth } =
+      containerRef.current;
+    const { rowHeight, colWidth, maxRows, maxCols } = CELL_DIMENSIONS;
 
     const startRow = Math.floor(scrollTop / rowHeight);
     const startCol = Math.floor(scrollLeft / colWidth);
 
-    const visibleHeight = containerRef.current.clientHeight;
-    const visibleWidth = containerRef.current.clientWidth;
-
     const endRow = Math.min(
-      9999,
-      startRow + Math.ceil(visibleHeight / rowHeight)
+      maxRows,
+      startRow + Math.ceil(clientHeight / rowHeight)
     );
     const endCol = Math.min(
-      9999,
-      startCol + Math.ceil(visibleWidth / colWidth)
+      maxCols,
+      startCol + Math.ceil(clientWidth / colWidth)
     );
 
     setVisibleRows({ start: startRow, end: endRow });
